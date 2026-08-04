@@ -4,7 +4,7 @@ import type { BaseReranker } from './rerankers';
 import { DATE_RANGE } from './schema';
 
 export type SearchProvider = 'serper' | 'searxng' | 'tavily';
-export type ScraperProvider = 'firecrawl' | 'serper' | 'tavily';
+export type ScraperProvider = 'firecrawl' | 'serper' | 'tavily' | 'crawl4ai';
 export type RerankerType = 'infinity' | 'jina' | 'cohere' | 'none';
 
 export interface Highlight {
@@ -169,6 +169,15 @@ export interface TavilyScraperConfig {
   format?: 'markdown' | 'text';
 }
 
+export interface Crawl4AIScraperConfig {
+  apiKey?: string;
+  apiUrl?: string;
+  timeout?: number;
+  logger?: Logger;
+  extractionStrategy?: string;
+  chunkingStrategy?: string;
+}
+
 export interface ScraperContentResult {
   content: string;
 }
@@ -234,6 +243,9 @@ export interface SearchToolConfig
   scraperProvider?: ScraperProvider;
   scraperTimeout?: number;
   serperScraperOptions?: SerperScraperConfig;
+  crawl4aiApiKey?: string;
+  crawl4aiApiUrl?: string;
+  crawl4aiOptions?: Crawl4AIScraperConfig;
   onSearchResults?: (
     results: SearchResult,
     runnableConfig?: RunnableConfig
@@ -255,7 +267,8 @@ export type UsedReferences = {
 export type AnyScraperResponse =
   | FirecrawlScrapeResponse
   | SerperScrapeResponse
-  | TavilyScrapeResponse;
+  | TavilyScrapeResponse
+  | Crawl4AIScrapeResponse;
 
 /** Base Scraper Interface */
 export interface BaseScraper {
@@ -288,6 +301,11 @@ export type SerperScrapeOptions = Omit<
 
 export type TavilyScrapeOptions = Omit<
   TavilyScraperConfig,
+  'apiKey' | 'apiUrl' | 'logger'
+>;
+
+export type Crawl4AIScrapeOptions = Omit<
+  Crawl4AIScraperConfig,
   'apiKey' | 'apiUrl' | 'logger'
 >;
 
@@ -397,6 +415,28 @@ export interface TavilyScrapeResponse {
     rawContent?: string;
     images?: string[];
     favicon?: string;
+  };
+  error?: string;
+}
+
+export interface Crawl4AIScrapeResponse {
+  success: boolean;
+  data?: {
+    markdown?: string;
+    text?: string;
+    html?: string;
+    metadata?: Record<string, string | number | boolean | null | undefined>;
+    // /crawl endpoint returns results array
+    results?: Array<{
+      url?: string;
+      markdown?: {
+        raw_markdown?: string;
+        markdown_with_citations?: string;
+        references_markdown?: string;
+      };
+      html?: string;
+      metadata?: Record<string, string | number | boolean | null | undefined>;
+    }>;
   };
   error?: string;
 }

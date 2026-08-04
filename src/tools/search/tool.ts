@@ -13,6 +13,7 @@ import {
   DATE_RANGE,
 } from './schema';
 import { createSearchAPI, createSourceProcessor } from './search';
+import { createCrawl4AIScraper } from './crawl4ai-scraper';
 import { createSerperScraper } from './serper-scraper';
 import { createTavilyScraper } from './tavily-scraper';
 import { createFirecrawlScraper } from './firecrawl';
@@ -315,7 +316,11 @@ function createTool({
         }),
       });
       const turn = runnableConfig.toolCall?.turn ?? 0;
-      const { output, references } = formatResultsForLLM(turn, searchResult, maxOutputChars);
+      const { output, references } = formatResultsForLLM(
+        turn,
+        searchResult,
+        maxOutputChars
+      );
       const data: t.SearchResultData = { turn, ...searchResult, references };
       return [output, { [Constants.WEB_SEARCH]: data }];
     },
@@ -372,6 +377,9 @@ export const createSearchTool = (
     firecrawlOptions,
     serperScraperOptions,
     tavilyScraperOptions,
+    crawl4aiApiKey,
+    crawl4aiApiUrl,
+    crawl4aiOptions,
     scraperTimeout,
     jinaApiKey,
     jinaApiUrl,
@@ -436,6 +444,14 @@ export const createSearchTool = (
         process.env.TAVILY_API_KEY,
       apiUrl: tavilyScraperOptions?.apiUrl ?? tavilyExtractUrl,
       timeout: scraperTimeout ?? tavilyScraperOptions?.timeout,
+      logger,
+    });
+  } else if (scraperProvider === 'crawl4ai') {
+    scraperInstance = createCrawl4AIScraper({
+      ...crawl4aiOptions,
+      apiKey: crawl4aiApiKey,
+      apiUrl: crawl4aiApiUrl,
+      timeout: scraperTimeout ?? crawl4aiOptions?.timeout,
       logger,
     });
   } else {
